@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#087a45">
+  <meta name="description" content="Compare intercity transport fares by station across Ghana.">
+  <title>GoFare Ghana — Know your fare before you go</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#" aria-label="GoFare Ghana home"><span class="brand-mark">G</span><span>GoFare <b>Ghana</b></span></a>
+    <span class="top-tag">TRAVEL INFORMED</span>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="eyebrow">GHANA INTERCITY FARE GUIDE</div>
+      <h1>Know your fare<br><em>before you go.</em></h1>
+      <p>Compare reported transport fares by station and plan your journey with confidence.</p>
+      <form id="search-form" class="search-card">
+        <label for="origin">Travelling from</label>
+        <select id="origin" required>
+          <option value="Accra">Accra</option>
+          <option value="Kumasi">Kumasi</option>
+          <option value="Ho">Ho</option>
+          <option value="Cape Coast">Cape Coast</option>
+          <option value="Takoradi">Takoradi</option>
+        </select>
+        <div class="swap-line"><span></span><small>TO</small><span></span></div>
+        <label for="destination">Going to</label>
+        <select id="destination" required>
+          <option value="Kumasi">Kumasi</option>
+          <option value="Ho">Ho</option>
+          <option value="Cape Coast">Cape Coast</option>
+          <option value="Takoradi">Takoradi</option>
+          <option value="Nsawam">Nsawam</option>
+          <option value="Accra">Accra</option>
+        </select>
+        <button class="primary full" type="submit">Find fares <span aria-hidden="true">→</span></button>
+      </form>
+      <div class="trust-note"><span class="pulse"></span> Fare freshness and verification status are shown with each result.</div>
+    </section>
+
+    <section class="results-section" id="results-section" aria-live="polite">
+      <div class="section-heading">
+        <div><div class="eyebrow">ROUTE COMPARISON</div><h2 id="results-title">Popular journeys</h2></div>
+        <span class="demo-pill">DEMO DATA</span>
+      </div>
+      <div id="results" class="results-grid"></div>
+      <p class="notice"><b>Important:</b> All fares currently shown are fictional demonstration figures. Do not use them to plan or pay for a real journey. Real fares will only be published after collection and verification.</p>
+    </section>
+
+    <section class="report-section">
+      <div class="report-copy">
+        <div class="eyebrow">HELP KEEP FARES CURRENT</div>
+        <h2>Recently travelled?</h2>
+        <p>Tell us the fare you were quoted or paid. Reports in this prototype are saved only on this device and are not yet sent to GoFare Ghana.</p>
+      </div>
+      <form id="report-form" class="report-card">
+        <label for="report-origin">From</label>
+        <input id="report-origin" placeholder="e.g. Accra" required>
+        <label for="report-destination">To</label>
+        <input id="report-destination" placeholder="e.g. Kumasi" required>
+        <label for="report-station">Departure station</label>
+        <input id="report-station" placeholder="e.g. Neoplan Station" required>
+        <label for="report-fare">Fare paid or quoted (GH₵)</label>
+        <input id="report-fare" type="number" min="0.01" step="0.01" placeholder="e.g. 120" required>
+        <label for="report-date">Travel / quote date</label>
+        <input id="report-date" type="date" required>
+        <button class="secondary full" type="submit">Save demo report</button>
+        <p id="report-message" class="form-message" role="status"></p>
+      </form>
+    </section>
+  </main>
+
+  <footer><a class="brand footer-brand" href="#"><span class="brand-mark">G</span><span>GoFare <b>Ghana</b></span></a><p>Better travel decisions start with better information.</p><small>Prototype v0.1 · Not affiliated with any transport union or station.</small></footer>
+  <script src="app.js"></script>
+</body>
+</html>
