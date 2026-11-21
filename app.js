@@ -1,3 +1,12 @@
+
+// GoFare Ghana — Supabase connection
+const SUPABASE_URL = "https://hmoapvelsdkyjlatflcd.supabase.co/rest/v1/";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_0HlI1juXoeP30NYtWpRUgQ_onJ4PhWr";
+
+const supabaseClient = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_PUBLISHABLE_KEY
+);
 const demoFares = [
   {from:"Accra",to:"Kumasi",station:"Neoplan Station",fare:120,status:"DEMO — NOT VERIFIED",kind:"pending"},
   {from:"Accra",to:"Kumasi",station:"Circle",fare:130,status:"DEMO — NOT VERIFIED",kind:"pending"},
