@@ -7,7 +7,6 @@ const supabaseClient = window.supabase.createClient(
   SUPABASE_URL,
   SUPABASE_PUBLISHABLE_KEY
 );
-
 (async function testDatabaseConnection() {
   const status = document.createElement("p");
   status.id = "database-status";
