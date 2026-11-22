@@ -1,6 +1,7 @@
 
 /* =====================================
    GOFARE GHANA — ADMIN DASHBOARD
+   BULK RECORD MANAGEMENT
 ===================================== */
 
 const SUPABASE_URL = "https://geqypnseawwqlvtrqsej.supabase.co";
@@ -46,6 +47,223 @@ function makeRecord(container, title, details) {
 }
 
 /* =====================================
+   BULK SELECTION CONTROLS
+===================================== */
+
+function addBulkControls(container, records, label, handler) {
+  if (!records.length) return;
+
+  const toolbar = document.createElement("div");
+  toolbar.className = "bulk-toolbar";
+
+  const selectAllLabel = document.createElement("label");
+  const selectAll = document.createElement("input");
+
+  selectAll.type = "checkbox";
+
+  selectAll.addEventListener("change", () => {
+    container
+      .querySelectorAll("[data-record-select]")
+      .forEach(box => {
+        box.checked = selectAll.checked;
+      });
+  });
+
+  selectAllLabel.appendChild(selectAll);
+  selectAllLabel.appendChild(
+    document.createTextNode(" Select all")
+  );
+
+  const actionButton = document.createElement("button");
+  actionButton.type = "button";
+  actionButton.className = "secondary";
+  actionButton.textContent = label;
+
+  actionButton.addEventListener("click", async () => {
+    const selected = [
+      ...container.querySelectorAll("[data-record-select]:checked")
+    ].map(box => box.value);
+
+    if (!selected.length) {
+      alert("Please select at least one record.");
+      return;
+    }
+
+    await handler(selected);
+  });
+
+  toolbar.appendChild(selectAllLabel);
+  toolbar.appendChild(actionButton);
+
+  container.appendChild(toolbar);
+}
+
+function addRecordCheckbox(card, id) {
+  const label = document.createElement("label");
+  label.style.display = "block";
+  label.style.marginBottom = "8px";
+
+  const checkbox = document.createElement("input");
+  checkbox.type = "checkbox";
+  checkbox.value = id;
+  checkbox.setAttribute("data-record-select", "true");
+
+  label.appendChild(checkbox);
+  label.appendChild(
+    document.createTextNode(" Select record")
+  );
+
+  card.insertBefore(label, card.firstChild);
+}
+
+/* =====================================
+   SAFE BULK REMOVAL
+===================================== */
+
+async function removeStations(ids) {
+  if (!confirm(
+    `Remove ${ids.length} selected station(s)?\n\nStations linked to fares or passenger reports will be deactivated instead of deleted.`
+  )) return;
+
+  let deleted = 0;
+  let deactivated = 0;
+
+  for (const id of ids) {
+    const [fareResult, reportResult] = await Promise.all([
+      db.from("fares").select("id").eq("station_id", id).limit(1),
+      db.from("fare_reports").select("id").eq("station_id", id).limit(1)
+    ]);
+
+    if (fareResult.error) throw fareResult.error;
+    if (reportResult.error) throw reportResult.error;
+
+    const linked =
+      (fareResult.data?.length || 0) > 0 ||
+      (reportResult.data?.length || 0) > 0;
+
+    if (linked) {
+      const { error } = await db
+        .from("stations")
+        .update({ is_active: false })
+        .eq("id", id);
+
+      if (error) throw error;
+      deactivated++;
+    } else {
+      const { error } = await db
+        .from("stations")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+      deleted++;
+    }
+  }
+
+  await loadDashboard();
+
+  message(
+    "dashboard-message",
+    `${deleted} station(s) deleted. ${deactivated} linked station(s) deactivated.`
+  );
+}
+
+async function removeRoutes(ids) {
+  if (!confirm(
+    `Remove ${ids.length} selected route(s)?\n\nRoutes linked to fares or passenger reports will be deactivated instead of deleted.`
+  )) return;
+
+  let deleted = 0;
+  let deactivated = 0;
+
+  for (const id of ids) {
+    const [fareResult, reportResult] = await Promise.all([
+      db.from("fares").select("id").eq("route_id", id).limit(1),
+      db.from("fare_reports").select("id").eq("route_id", id).limit(1)
+    ]);
+
+    if (fareResult.error) throw fareResult.error;
+    if (reportResult.error) throw reportResult.error;
+
+    const linked =
+      (fareResult.data?.length || 0) > 0 ||
+      (reportResult.data?.length || 0) > 0;
+
+    if (linked) {
+      const { error } = await db
+        .from("routes")
+        .update({ is_active: false })
+        .eq("id", id);
+
+      if (error) throw error;
+      deactivated++;
+    } else {
+      const { error } = await db
+        .from("routes")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+      deleted++;
+    }
+  }
+
+  await loadDashboard();
+
+  message(
+    "dashboard-message",
+    `${deleted} route(s) deleted. ${deactivated} linked route(s) deactivated.`
+  );
+}
+
+async function removeFares(ids) {
+  if (!confirm(
+    `Permanently delete ${ids.length} selected fare record(s)? This cannot be undone.`
+  )) return;
+
+  const { error } = await db
+    .from("fares")
+    .delete()
+    .in("id", ids);
+
+  if (error) throw error;
+
+  await loadDashboard();
+  message("dashboard-message", `${ids.length} fare record(s) deleted.`);
+}
+
+async function removeReports(ids) {
+  if (!confirm(
+    `Permanently delete ${ids.length} selected passenger report(s)? This cannot be undone.`
+  )) return;
+
+  const { error } = await db
+    .from("fare_reports")
+    .delete()
+    .in("id", ids);
+
+  if (error) throw error;
+
+  await loadDashboard();
+  message("dashboard-message", `${ids.length} passenger report(s) deleted.`);
+}
+
+async function runBulkAction(action, ids) {
+  message("dashboard-message", "Processing selected records...");
+
+  try {
+    await action(ids);
+  } catch (error) {
+    console.error(error);
+    message(
+      "dashboard-message",
+      "Some records could not be processed: " + error.message
+    );
+    alert(error.message);
+  }
+}
+
+/* =====================================
    ADMINISTRATOR AUTHENTICATION
 ===================================== */
 
@@ -73,10 +291,12 @@ async function checkAdministrator() {
   if (!data) {
     await db.auth.signOut();
     showLogin();
+
     message(
       "login-message",
       "This account is not registered as a GoFare administrator."
     );
+
     return false;
   }
 
@@ -127,6 +347,7 @@ $("login-form").addEventListener("submit", async event => {
 
   } catch (error) {
     console.error(error);
+
     message(
       "login-message",
       error.message || "Login failed. Please try again."
@@ -154,12 +375,11 @@ async function loadDashboard() {
   message("dashboard-message", "Loading records...");
 
   try {
-    await Promise.all([
-      loadStations(),
-      loadRoutes(),
-      loadFares(),
-      loadReports()
-    ]);
+    // Load in order because fares need stations and routes.
+    await loadStations();
+    await loadRoutes();
+    await loadFares();
+    await loadReports();
 
     message(
       "dashboard-message",
@@ -168,9 +388,10 @@ async function loadDashboard() {
 
   } catch (error) {
     console.error(error);
+
     message(
       "dashboard-message",
-      "Unable to load some records. Please refresh."
+      "Unable to load some records: " + error.message
     );
   }
 }
@@ -211,7 +432,8 @@ async function loadStations() {
     }
 
     form.reset();
-    await loadStations();
+    await loadDashboard();
+
     message("dashboard-message", "Station added successfully.");
   });
 
@@ -226,12 +448,21 @@ async function loadStations() {
 
   stations = data || [];
 
+  addBulkControls(
+    container,
+    stations,
+    "Remove selected stations",
+    ids => runBulkAction(removeStations, ids)
+  );
+
   stations.forEach(station => {
     const card = makeRecord(
       container,
       station.name,
       `${station.city || ""} — ${station.is_active ? "Active" : "Inactive"}`
     );
+
+    addRecordCheckbox(card, station.id);
 
     const button = document.createElement("button");
     button.className = "secondary";
@@ -299,6 +530,7 @@ async function loadRoutes() {
 
     form.reset();
     await loadDashboard();
+
     message("dashboard-message", "Route added successfully.");
   });
 
@@ -313,12 +545,21 @@ async function loadRoutes() {
 
   routes = data || [];
 
+  addBulkControls(
+    container,
+    routes,
+    "Remove selected routes",
+    ids => runBulkAction(removeRoutes, ids)
+  );
+
   routes.forEach(route => {
     const card = makeRecord(
       container,
       `${route.origin} → ${route.destination}`,
       route.is_active ? "Active route" : "Inactive route"
     );
+
+    addRecordCheckbox(card, route.id);
 
     const button = document.createElement("button");
     button.className = "secondary";
@@ -380,9 +621,7 @@ async function loadFares() {
     <button type="submit">Save fare</button>
   `;
 
-  const stationSelect = form.querySelector(
-    '[name="station_id"]'
-  );
+  const stationSelect = form.querySelector('[name="station_id"]');
 
   stations
     .filter(station => station.is_active)
@@ -390,9 +629,7 @@ async function loadFares() {
       addOption(stationSelect, station.id, station.name);
     });
 
-  const routeSelect = form.querySelector(
-    '[name="route_id"]'
-  );
+  const routeSelect = form.querySelector('[name="route_id"]');
 
   routes
     .filter(route => route.is_active)
@@ -458,7 +695,16 @@ async function loadFares() {
 
   if (error) throw error;
 
-  (data || []).forEach(fare => {
+  const fares = data || [];
+
+  addBulkControls(
+    container,
+    fares,
+    "Delete selected fares",
+    ids => runBulkAction(removeFares, ids)
+  );
+
+  fares.forEach(fare => {
     const station = stations.find(
       item => item.id === fare.station_id
     );
@@ -467,11 +713,13 @@ async function loadFares() {
       item => item.id === fare.route_id
     );
 
-    makeRecord(
+    const card = makeRecord(
       container,
       `${fare.currency} ${Number(fare.amount).toFixed(2)}`,
       `${station?.name || "Station"} | ${route?.origin || ""} → ${route?.destination || ""} | ${fare.vehicle_type} | ${fare.verification_status}`
     );
+
+    addRecordCheckbox(card, fare.id);
   });
 }
 
@@ -490,17 +738,28 @@ async function loadReports() {
 
   if (error) throw error;
 
-  if (!data || data.length === 0) {
+  const reports = data || [];
+
+  if (reports.length === 0) {
     container.textContent = "No passenger reports yet.";
     return;
   }
 
-  data.forEach(report => {
+  addBulkControls(
+    container,
+    reports,
+    "Delete selected reports",
+    ids => runBulkAction(removeReports, ids)
+  );
+
+  reports.forEach(report => {
     const card = makeRecord(
       container,
       `${report.status.toUpperCase()} — GH₵ ${Number(report.reported_amount).toFixed(2)}`,
       `Vehicle: ${report.vehicle_type || "Not specified"} | Submitted: ${new Date(report.created_at).toLocaleDateString()}`
     );
+
+    addRecordCheckbox(card, report.id);
 
     const notes = document.createElement("p");
     notes.textContent = report.notes || "No additional notes.";
