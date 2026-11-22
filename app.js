@@ -1,36 +1,3 @@
-
-// GoFare Ghana — Supabase connection
-const SUPABASE_URL = "https://geqypnseawwqlvtrqsej.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_eAMCV7V2dERa-nE2uk3srQ_Y5Wp990I";
-
-const supabaseClient = window.supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_PUBLISHABLE_KEY
-);
-(async function testDatabaseConnection() {
-  const status = document.createElement("p");
-  status.id = "database-status";
-  status.textContent = "Checking database connection...";
-  status.style.cssText = "text-align:center;padding:12px;font-weight:bold;";
-  document.querySelector("main").prepend(status);
-
-  try {
-    const { error } = await supabaseClient
-      .from("stations")
-      .select("id")
-      .limit(1);
-
-    if (error) throw error;
-
-    status.textContent = "Database connected successfully!";
-    status.style.color = "green";
-  } catch (error) {
-    status.textContent = "Database connection failed. Please check your settings.";
-    status.style.color = "red";
-    console.error("GoFare database error:", error);
-  }
-})();
-
 const demoFares = [
   {from:"Accra",to:"Kumasi",station:"Neoplan Station",fare:120,status:"DEMO — NOT VERIFIED",kind:"pending"},
   {from:"Accra",to:"Kumasi",station:"Circle",fare:130,status:"DEMO — NOT VERIFIED",kind:"pending"},
