@@ -1,7 +1,7 @@
 
 // GoFare Ghana — Supabase connection
-const SUPABASE_URL = "https://hmoapvelsdkyjlatflcd.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_0HlI1juXoeP30NYtWpRUgQ_onJ4PhWr";
+const SUPABASE_URL = "https://geqypnseawwqlvtrqsej.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_eAMCV7V2dERa-nE2uk3srQ_Y5Wp990I";
 
 const supabaseClient = window.supabase.createClient(
   SUPABASE_URL,
